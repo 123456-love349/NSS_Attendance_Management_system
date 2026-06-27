@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NSS Analytics Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/nss_logo.png') }}">
+   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .admin-layout {
+            display: grid;
+            grid-template-columns: 240px 1fr;
+            gap: 2rem;
+            margin-top: 1rem;
+        }
+        @media (max-width: 900px) {
+            .admin-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+        .sidebar {
+            background: var(--surface);
+            border-radius: var(--radius-lg);
+            padding: 1.5rem;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+            height: fit-content;
+        }
+        .sidebar-menu {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            padding-left: 0;
+        }
+        .sidebar-link {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem 1rem;
+            color: var(--text-muted);
+            text-decoration: none;
+            font-weight: 500;
+            border-radius: var(--radius-sm);
+            transition: var(--transition);
+        }
+        .sidebar-link:hover, .sidebar-link.active {
+            color: var(--primary);
+            background: rgba(0, 33, 71, 0.05);
+        }
+        .sidebar-link.active {
+            font-weight: 600;
+            border-left: 4px solid var(--accent);
+            color: var(--primary);
+            background: rgba(0, 33, 71, 0.08);
+        }
+
+        .analytics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 2rem;
+        }
+
+        @media (max-width: 500px) {
+            .analytics-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .chart-card {
+            background: var(--surface);
+            border-radius: var(--radius-md);
+            padding: 1.5rem;
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow);
+            min-height: 350px;
+        }
+
+        .chart-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 1.25rem;
+        }
+
+        .chart-container {
+            position: relative;
+            width: 100%;
+            height: 280px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <a href="/" class="brand">
+            <img src="{{ url_for('static', filename='images/nss_logo.png') }}" alt="NSS Logo" class="brand-logo">
+            <div class="brand-text">
+                <h1>NSS Smart Attendance</h1>
+                <p>National Service Scheme</p>
+            </div>
+        </a>
+        <nav>
+            <span style="font-weight: 600; color: var(--primary); padding-right: 1rem;">
+                Logged in as Admin
+            </span>
+            <a href="/admin/logout" class="nav-link" style="color: var(--error);">Logout</a>
+        </nav>
+    </header>
+
+    <main style="max-width: 1300px;">
+        <div class="admin-layout">
+            <aside class="sidebar">
+                <h3 style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 1rem;">Navigation</h3>
+                <ul class="sidebar-menu">
+                    <li><a href="/admin" class="sidebar-link">Dashboard</a></li>
+                    <li><a href="/results" class="sidebar-link">Attendance Logs</a></li>
+                    <li><a href="/analytics" class="sidebar-link active">Analytics</a></li>
+                    <li><a href="/admin/logout" class="sidebar-link" style="color: red;">Logout</a></li>
+                </ul>
+            </aside>
+
+            <div class="content-area">
+                <div class="hero" style="text-align: left; margin-bottom: 2rem;">
+                    <h2 style="font-size: 2.25rem;">NSS Department Attendance Analytics</h2>
+                    <p style="margin: 0;">Visual reports representing volunteer distribution, branch representation, attendance modes, and event participation.</p>
+                </div>
+
+                <div class="analytics-grid">
+                    <div class="chart-card">
+                        <h4 class="chart-title">Branch Representation</h4>
+                        <div class="chart-container">
+                            <canvas id="branchChart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="chart-card">
+                        <h4 class="chart-title">NSS Volunteer Ratio</h4>
+                        <div class="chart-container">
+                            <canvas id="volunteerChart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="chart-card">
+                        <h4 class="chart-title">Attendance Logging Mode</h4>
+                        <div class="chart-container">
+                            <canvas id="modeChart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="chart-card">
+                        <h4 class="chart-title">Attendance by NSS Event</h4>
+                        <div class="chart-container">
+                            <canvas id="eventChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <p>&copy; 2026 National Service Scheme (NSS). All Rights Reserved.</p>
+        <p style="font-size: 0.75rem; margin-top: 0.5rem; color: var(--text-muted);">Not Me But You</p>
+    </footer>
+
+    <script>
+        const branchLabels = {{ branch_data.labels | tojson }};
+        const branchCounts = {{ branch_data.counts | tojson }};
+
+        const volunteerLabels = {{ volunteer_data.labels | tojson }};
+        const volunteerCounts = {{ volunteer_data.counts | tojson }};
+
+        const modeLabels = {{ mode_data.labels | tojson }};
+        const modeCounts = {{ mode_data.counts | tojson }};
+
+        const eventLabels = {{ event_data.labels | tojson }};
+        const eventCounts = {{ event_data.counts | tojson }};
+
+        const colors = {
+            navy: '#002147',
+            orange: '#ff4500',
+            teal: '#10b981',
+            blue: '#3b82f6',
+            gray: '#64748b',
+            purple: '#8b5cf6',
+            amber: '#f59e0b'
+        };
+
+        function checkEmpty(counts) {
+            return counts.length === 0 || counts.reduce((a, b) => a + b, 0) === 0;
+        }
+
+        new Chart(document.getElementById('branchChart'), {
+            type: 'bar',
+            data: {
+                labels: checkEmpty(branchCounts) ? ['No Data'] : branchLabels,
+                datasets: [{
+                    label: 'Students',
+                    data: checkEmpty(branchCounts) ? [0] : branchCounts,
+                    backgroundColor: colors.navy,
+                    borderRadius: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { beginAtZero: true, ticks: { precision: 0 } }
+                }
+            }
+        });
+
+        new Chart(document.getElementById('volunteerChart'), {
+            type: 'doughnut',
+            data: {
+                labels: checkEmpty(volunteerCounts) ? ['No Data'] : volunteerLabels,
+                datasets: [{
+                    data: checkEmpty(volunteerCounts) ? [1] : volunteerCounts,
+                    backgroundColor: [colors.orange, colors.navy, colors.gray]
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { position: 'bottom' } }
+            }
+        });
+
+        new Chart(document.getElementById('modeChart'), {
+            type: 'pie',
+            data: {
+                labels: checkEmpty(modeCounts) ? ['No Data'] : modeLabels,
+                datasets: [{
+                    data: checkEmpty(modeCounts) ? [1] : modeCounts,
+                    backgroundColor: [colors.teal, colors.blue, colors.amber, colors.gray]
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { position: 'bottom' } }
+            }
+        });
+
+        new Chart(document.getElementById('eventChart'), {
+            type: 'bar',
+            data: {
+                labels: checkEmpty(eventCounts) ? ['No Data'] : eventLabels,
+                datasets: [{
+                    label: 'Registrations',
+                    data: checkEmpty(eventCounts) ? [0] : eventCounts,
+                    backgroundColor: colors.orange,
+                    borderRadius: 6
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { beginAtZero: true, ticks: { precision: 0 } }
+                }
+            }
+        });
+    </script>
+</body>
+</html>

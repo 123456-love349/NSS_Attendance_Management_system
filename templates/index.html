@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NSS Smart Attendance System</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/nss_logo.png') }}">
+    <style>
+        .branding-hero {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            margin-bottom: 3.5rem;
+            animation: fadeIn 0.8s ease-out;
+        }
+        .hero-logo {
+            height: 120px;
+            width: auto;
+            margin-bottom: 1.5rem;
+            filter: drop-shadow(0 4px 6px rgba(0, 33, 71, 0.15));
+            transition: var(--transition);
+        }
+        .hero-logo:hover {
+            transform: scale(1.05) rotate(3deg);
+        }
+        .tagline {
+            font-size: 1.15rem;
+            color: var(--accent);
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-top: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <a href="/" class="brand">
+            <img src="{{ url_for('static', filename='images/nss_logo.png') }}" alt="NSS Logo" class="brand-logo">
+            <div class="brand-text">
+                <h1>NSS Smart Attendance</h1>
+                <p>National Service Scheme</p>
+            </div>
+        </a>
+        <nav>
+            <a href="/" class="nav-link active">Home</a>
+            <a href="/student_form" class="nav-link">Student Portal</a>
+            <a href="/admin/login" class="nav-link">Admin Login</a>
+        </nav>
+    </header>
+
+    <main>
+        <div class="branding-hero">
+            <img src="{{ url_for('static', filename='images/nss_logo.png') }}" alt="NSS Logo" class="hero-logo">
+            <h2 style="font-size: 2.75rem; color: var(--primary); font-weight: 800; line-height: 1.25;">NSS Smart Attendance System</h2>
+            <div class="tagline">Not Me But You</div>
+            <p style="font-size: 1.15rem; color: var(--text-muted); max-width: 700px; margin-top: 1.25rem; line-height: 1.6;">
+                A contactless, QR-code based smart attendance platform built for college NSS departments to easily log, verify, and monitor student attendance across social camps and community drives.
+            </p>
+        </div>
+
+        <div class="card-grid" style="max-width: 950px; margin: 0 auto;">
+            <!-- Student Portal Card -->
+            <div class="card">
+                <h3 class="card-title" style="display: flex; align-items: center; gap: 0.75rem;">
+                    <svg width="24" height="24" fill="none" stroke="var(--accent)" stroke-width="2" viewBox="0 0 24 24"><path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                    Student Portal
+                </h3>
+                <p class="card-description">
+                    Mark your attendance for an ongoing NSS event. Scan the event QR code with your mobile or click below to fill out your academic registration form.
+                </p>
+                <div class="card-actions" style="margin-top: auto;">
+                    <a href="/student_form" class="btn btn-accent btn-full">Access Student Form</a>
+                </div>
+            </div>
+
+            <!-- Admin Portal Card -->
+            <div class="card">
+                <h3 class="card-title" style="display: flex; align-items: center; gap: 0.75rem;">
+                    <svg width="24" height="24" fill="none" stroke="var(--primary)" stroke-width="2" viewBox="0 0 24 24"><path d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                    Admin Control Panel
+                </h3>
+                <p class="card-description">
+                    Authorized administrators can generate event QR codes, view real-time logs, inspect proxy alerts, parse paper attendance sheets via EasyOCR, and download Excel reports.
+                </p>
+                <div class="card-actions" style="margin-top: auto;">
+                    <a href="/admin/login" class="btn btn-primary btn-full">Admin Dashboard Login</a>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <p>&copy; 2026 National Service Scheme (NSS). All Rights Reserved.</p>
+        <p style="font-size: 0.75rem; margin-top: 0.5rem; color: var(--text-muted);">Not Me But You</p>
+    </footer>
+</body>
+</html>

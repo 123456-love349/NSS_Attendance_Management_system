@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload Attendance Sheet - NSS</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/nss_logo.png') }}">
+    <style>
+        .admin-layout {
+            display: grid;
+            grid-template-columns: 240px 1fr;
+            gap: 2rem;
+            margin-top: 1rem;
+        }
+        @media (max-width: 900px) {
+            .admin-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+        .sidebar {
+            background: var(--surface);
+            border-radius: var(--radius-lg);
+            padding: 1.5rem;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+            height: fit-content;
+        }
+        .sidebar-menu {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        .sidebar-link {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem 1rem;
+            color: var(--text-muted);
+            text-decoration: none;
+            font-weight: 500;
+            border-radius: var(--radius-sm);
+            transition: var(--transition);
+        }
+        .sidebar-link:hover, .sidebar-link.active {
+            color: var(--primary);
+            background: rgba(0, 33, 71, 0.05);
+        }
+        .sidebar-link.active {
+            font-weight: 600;
+            border-left: 4px solid var(--accent);
+            color: var(--primary);
+            background: rgba(0, 33, 71, 0.08);
+        }
+        .sidebar-link.logout {
+            color: var(--error);
+        }
+        .sidebar-link.logout:hover {
+            background: rgba(239, 68, 68, 0.05);
+        }
+
+        /* OCR Dropzone styles */
+        .dropzone {
+            border: 2.5px dashed var(--primary);
+            border-radius: var(--radius-md);
+            background: rgba(0, 33, 71, 0.01);
+            padding: 3rem 2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: var(--transition);
+            margin-bottom: 2rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+        }
+        .dropzone:hover, .dropzone.dragover {
+            background: rgba(0, 33, 71, 0.04);
+            border-color: var(--accent);
+        }
+        .dropzone svg {
+            color: var(--primary);
+            width: 50px;
+            height: 50px;
+            transition: var(--transition);
+        }
+        .dropzone:hover svg {
+            color: var(--accent);
+            transform: translateY(-4px);
+        }
+        .dropzone-text {
+            font-weight: 600;
+            color: var(--primary);
+        }
+        .dropzone-subtext {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+        #file-input {
+            display: none;
+        }
+        .loader {
+            display: none;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            margin: 2rem 0;
+            font-weight: 600;
+            color: var(--primary);
+        }
+        .spinner {
+            width: 28px;
+            height: 28px;
+            border: 3.5px solid var(--border);
+            border-top: 3.5px solid var(--accent);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Editable Table Input Controls */
+        .table-input {
+            border: 1px solid var(--border);
+            padding: 0.4rem 0.6rem;
+            border-radius: 4px;
+            width: 100%;
+            font-family: inherit;
+            font-size: 0.9rem;
+            background: #fff;
+            transition: var(--transition);
+        }
+        .table-input:focus {
+            border-color: var(--primary);
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(0, 33, 71, 0.1);
+        }
+        .action-icon-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: var(--error);
+            padding: 0.25rem;
+            border-radius: 4px;
+            transition: var(--transition);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .action-icon-btn:hover {
+            background: rgba(239, 68, 68, 0.1);
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <a href="/" class="brand">
+            <img src="{{ url_for('static', filename='images/nss_logo.png') }}" alt="NSS Logo" class="brand-logo">
+            <div class="brand-text">
+                <h1>NSS Smart Attendance</h1>
+                <p>National Service Scheme</p>
+            </div>
+        </a>
+        <nav>
+            <span style="font-weight: 600; color: var(--primary); border-right: 1px solid var(--border); padding-right: 1rem; margin-right: 0.5rem;">
+                Logged in as Admin
+            </span>
+            <a href="/admin/logout" class="nav-link" style="color: var(--error);">Logout</a>
+        </nav>
+    </header>
+
+    <main style="max-width: 1300px;">
+        <div class="admin-layout">
+            <!-- Sidebar -->
+            <aside class="sidebar">
+                <h3 style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 1rem; padding-left: 0.5rem;">Navigation</h3>
+                <ul class="sidebar-menu">
+                    <li>
+                        <a href="/admin" class="sidebar-link">
+                            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 6a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>
+                            Dashboard
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/results" class="sidebar-link">
+                            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
+                            Attendance Logs
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/upload" class="sidebar-link active">
+                            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+                            Upload Sheet (OCR)
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/analytics" class="sidebar-link">
+                            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2h-2a2 2 0 00-2 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+                            Analytics
+                        </a>
+                    </li>
+                    <li style="margin-top: 1rem; border-top: 1px solid var(--border); padding-top: 1rem;">
+                        <a href="/admin/logout" class="sidebar-link logout">
+                            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+                            Logout
+                        </a>
+                    </li>
+                </ul>
+            </aside>
+
+            <!-- Upload Main Panel -->
+            <div class="content-area">
+                <div class="hero" style="text-align: left; margin-bottom: 2rem;">
+                    <h2 style="font-size: 2.25rem;">Upload Physical Attendance Sheet</h2>
+                    <p style="margin: 0;">Scan and upload paper sheets. EasyOCR parses text into editable lists for database sync.</p>
+                </div>
+
+                <!-- Event Mapping Selector Card -->
+                <div class="card" style="margin-bottom: 2rem; padding: 1.75rem;">
+                    <h3 style="font-size: 1.15rem; color: var(--primary); margin-bottom: 1rem; font-weight: 700;">1. Target Event Details</h3>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem;">
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label class="form-label" for="ocr-event">NSS Event Name</label>
+                            <input type="text" id="ocr-event" class="form-control" placeholder="e.g. Swachh Bharat Abhiyan" required>
+                        </div>
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label class="form-label" for="ocr-mode">Attendance Mode</label>
+                            <select id="ocr-mode" class="form-control">
+                                <option value="OCR Upload" selected>OCR Upload (Physical Sheet)</option>
+                                <option value="Manual Entry">Manual Entry</option>
+                                <option value="QR Scan">QR Code Scan</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- File Dropzone -->
+                <div class="card" style="padding: 1.75rem;">
+                    <h3 style="font-size: 1.15rem; color: var(--primary); margin-bottom: 1rem; font-weight: 700;">2. Upload Image File</h3>
+                    <div class="dropzone" id="dropzone">
+                        <svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z"></path></svg>
+                        <div class="dropzone-text">Drag and drop your attendance sheet image here</div>
+                        <div class="dropzone-subtext">Supports PNG, JPG, JPEG up to 5MB</div>
+                        <button type="button" class="btn btn-secondary" onclick="document.getElementById('file-input').click()">Browse Files</button>
+                        <input type="file" id="file-input" accept="image/png, image/jpeg, image/jpg">
+                    </div>
+
+                    <div class="loader" id="loader">
+                        <div class="spinner"></div>
+                        <div id="loader-text">Initializing EasyOCR engine & processing image... Please wait.</div>
+                    </div>
+
+                    <!-- OCR Preview and Edit Table -->
+                    <div id="ocr-results-container" style="display: none; margin-top: 1rem; animation: fadeIn 0.5s ease-out;">
+                        <h3 style="font-size: 1.25rem; color: var(--primary); margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: center; font-weight: 700;">
+                            <span>3. Extracted Attendance Data</span>
+                            <button type="button" class="btn btn-secondary" id="btn-add-row" style="padding: 0.4rem 0.8rem; font-size: 0.85rem;">+ Add Student Row</button>
+                        </h3>
+                        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.5rem;">Verify, correct, or fill in fields below. EasyOCR tries its best, but handwritten or distorted papers may require manual corrections.</p>
+                        
+                        <div class="table-wrapper" style="margin-bottom: 2rem;">
+                            <table class="styled-table">
+                                <thead>
+                                    <tr>
+                                        <th>Student Name</th>
+                                        <th style="width: 170px;">Branch</th>
+                                        <th style="width: 70px;">Sec</th>
+                                        <th style="width: 100px;">CRN</th>
+                                        <th style="width: 110px;">URN</th>
+                                        <th style="width: 130px;">Phone</th>
+                                        <th style="width: 90px;">Volunteer</th>
+                                        <th style="width: 50px; text-align: center;"></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="ocr-tbody">
+                                    <!-- Dynamic rows will be inserted here -->
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div style="display: flex; gap: 1rem; justify-content: flex-end;">
+                            <button type="button" class="btn btn-secondary" id="btn-reset" style="padding: 0.75rem 1.5rem;">Discard</button>
+                            <button type="button" class="btn btn-accent" id="btn-save-ocr" style="padding: 0.75rem 2rem;">Approve & Save Records</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <p>&copy; 2026 National Service Scheme (NSS). All Rights Reserved.</p>
+        <p style="font-size: 0.75rem; margin-top: 0.5rem; color: var(--text-muted);">Not Me But You</p>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const dropzone = document.getElementById('dropzone');
+            const fileInput = document.getElementById('file-input');
+            const loader = document.getElementById('loader');
+            const ocrContainer = document.getElementById('ocr-results-container');
+            const ocrTbody = document.getElementById('ocr-tbody');
+            const ocrEvent = document.getElementById('ocr-event');
+            const ocrMode = document.getElementById('ocr-mode');
+            const btnSave = document.getElementById('btn-save-ocr');
+            const btnAddRow = document.getElementById('btn-add-row');
+            const btnReset = document.getElementById('btn-reset');
+
+            let parsedRecords = [];
+
+            // Drag and Drop triggers
+            ['dragenter', 'dragover'].forEach(eventName => {
+                dropzone.addEventListener(eventName, (e) => {
+                    e.preventDefault();
+                    dropzone.classList.add('dragover');
+                }, false);
+            });
+
+            ['dragleave', 'drop'].forEach(eventName => {
+                dropzone.addEventListener(eventName, (e) => {
+                    e.preventDefault();
+                    dropzone.classList.remove('dragover');
+                }, false);
+            });
+
+            dropzone.addEventListener('drop', (e) => {
+                const dt = e.dataTransfer;
+                const files = dt.files;
+                if (files.length > 0) {
+                    processFile(files[0]);
+                }
+            });
+
+            fileInput.addEventListener('change', (e) => {
+                if (fileInput.files.length > 0) {
+                    processFile(fileInput.files[0]);
+                }
+            });
+
+            function processFile(file) {
+                const eventName = ocrEvent.value.trim();
+                if (!eventName) {
+                    alert('Please enter a Target Event Name in Step 1 first!');
+                    fileInput.value = '';
+                    ocrEvent.focus();
+                    return;
+                }
+
+                // Show loader, hide container
+                loader.style.display = 'flex';
+                ocrContainer.style.display = 'none';
+                dropzone.style.display = 'none';
+
+                const formData = new FormData();
+                formData.append('image', file);
+
+                fetch('/admin/ocr_process', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('OCR process failed.');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    loader.style.display = 'none';
+                    parsedRecords = data.records || [];
+                    renderOCRTable(parsedRecords);
+                })
+                .catch(err => {
+                    loader.style.display = 'none';
+                    dropzone.style.display = 'flex';
+                    alert('Error executing OCR: ' + err.message + '\nEnsure a valid image is uploaded.');
+                });
+            }
+
+            function renderOCRTable(records) {
+                ocrTbody.innerHTML = '';
+                if (records.length === 0) {
+                    ocrTbody.innerHTML = `<tr><td colspan="8" style="text-align:center; color:var(--text-muted);">No records parsed. Click "Add Student Row" to manual input.</td></tr>`;
+                }
+
+                records.forEach((rec, index) => {
+                    addTableRow(rec, index);
+                });
+
+                ocrContainer.style.display = 'block';
+            }
+
+            function addTableRow(rec = {}, index = null) {
+                if (index === null) {
+                    index = ocrTbody.children.length;
+                }
+
+                const name = rec.student_name || '';
+                const branch = rec.branch || 'Computer Science';
+                const section = rec.section || 'A';
+                const crn = rec.crn || '';
+                const urn = rec.urn || '';
+                const phone = rec.phone || '';
+                const isVolunteer = rec.is_nss_volunteer || 'Yes';
+
+                const tr = document.createElement('tr');
+                tr.id = `row-${index}`;
+                tr.innerHTML = `
+                    <td>
+                        <input type="text" class="table-input ocr-name" value="${name}" placeholder="Name" required>
+                    </td>
+                    <td>
+                        <select class="table-input ocr-branch">
+                            <option value="Computer Science" ${branch === 'Computer Science' ? 'selected' : ''}>Computer Science & Eng</option>
+                            <option value="Information Technology" ${branch === 'Information Technology' ? 'selected' : ''}>Information Technology</option>
+                            <option value="Electronics & Communication" ${branch === 'Electronics & Communication' ? 'selected' : ''}>Electronics & Comm</option>
+                            <option value="Mechanical Engineering" ${branch === 'Mechanical Engineering' ? 'selected' : ''}>Mechanical Eng</option>
+                            <option value="Electrical Engineering" ${branch === 'Electrical Engineering' ? 'selected' : ''}>Electrical Eng</option>
+                            <option value="Civil Engineering" ${branch === 'Civil Engineering' ? 'selected' : ''}>Civil Eng</option>
+                            <option value="Chemical Engineering" ${branch === 'Chemical Engineering' ? 'selected' : ''}>Chemical Eng</option>
+                        </select>
+                    </td>
+                    <td>
+                        <input type="text" class="table-input ocr-section" value="${section}" placeholder="Sec" required maxlength="2" style="text-align: center;">
+                    </td>
+                    <td>
+                        <input type="text" class="table-input ocr-crn" value="${crn}" placeholder="CRN" required style="font-family:monospace;">
+                    </td>
+                    <td>
+                        <input type="text" class="table-input ocr-urn" value="${urn}" placeholder="URN" required style="font-family:monospace;">
+                    </td>
+                    <td>
+                        <input type="tel" class="table-input ocr-phone" value="${phone}" placeholder="Phone" required>
+                    </td>
+                    <td>
+                        <select class="table-input ocr-volunteer" style="text-align: center;">
+                            <option value="Yes" ${isVolunteer === 'Yes' ? 'selected' : ''}>Yes</option>
+                            <option value="No" ${isVolunteer === 'No' ? 'selected' : ''}>No</option>
+                        </select>
+                    </td>
+                    <td style="text-align: center;">
+                        <button type="button" class="action-icon-btn btn-delete-row" title="Delete Row">
+                            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                        </button>
+                    </td>
+                `;
+
+                // Delete event
+                tr.querySelector('.btn-delete-row').addEventListener('click', () => {
+                    tr.remove();
+                    if (ocrTbody.children.length === 0) {
+                        renderOCRTable([]);
+                    }
+                });
+
+                ocrTbody.appendChild(tr);
+            }
+
+            btnAddRow.addEventListener('click', () => {
+                addTableRow();
+            });
+
+            btnReset.addEventListener('click', () => {
+                if (confirm('Are you sure you want to discard the uploaded sheet logs?')) {
+                    ocrTbody.innerHTML = '';
+                    ocrContainer.style.display = 'none';
+                    dropzone.style.display = 'flex';
+                    fileInput.value = '';
+                }
+            });
+
+            btnSave.addEventListener('click', () => {
+                const eventName = ocrEvent.value.trim();
+                const modeName = ocrMode.value;
+
+                if (!eventName) {
+                    alert('Please enter a Target Event Name!');
+                    ocrEvent.focus();
+                    return;
+                }
+
+                // Gather table values
+                const rows = ocrTbody.querySelectorAll('tr');
+                const studentsToSave = [];
+                let hasErrors = false;
+
+                rows.forEach((row, i) => {
+                    const name = row.querySelector('.ocr-name').value.trim();
+                    const branch = row.querySelector('.ocr-branch').value;
+                    const section = row.querySelector('.ocr-section').value.trim().toUpperCase();
+                    const crn = row.querySelector('.ocr-crn').value.trim();
+                    const urn = row.querySelector('.ocr-urn').value.trim();
+                    const phone = row.querySelector('.ocr-phone').value.trim();
+                    const volunteer = row.querySelector('.ocr-volunteer').value;
+
+                    if (!name || !section || !crn || !urn || !phone) {
+                        hasErrors = true;
+                        row.style.background = 'rgba(239, 68, 68, 0.05)';
+                    } else {
+                        row.style.background = '';
+                        studentsToSave.push({
+                            student_name: name,
+                            branch: branch,
+                            section: section,
+                            crn: crn,
+                            urn: urn,
+                            phone: phone,
+                            is_nss_volunteer: volunteer
+                        });
+                    }
+                });
+
+                if (hasErrors) {
+                    alert('Please fill all empty values highlighted in red.');
+                    return;
+                }
+
+                if (studentsToSave.length === 0) {
+                    alert('No student logs found to save.');
+                    return;
+                }
+
+                // POST back to save
+                btnSave.disabled = true;
+                btnSave.textContent = 'Saving...';
+
+                fetch('/admin/ocr_save', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        event: eventName,
+                        attendance_mode: modeName,
+                        records: studentsToSave
+                    })
+                })
+                .then(res => res.json())
+                .then(data => {
+                    btnSave.disabled = false;
+                    btnSave.textContent = 'Approve & Save Records';
+
+                    if (data.success) {
+                        alert(data.message || 'Records saved successfully!');
+                        // Reset page
+                        ocrTbody.innerHTML = '';
+                        ocrContainer.style.display = 'none';
+                        dropzone.style.display = 'flex';
+                        fileInput.value = '';
+                    } else {
+                        alert('Error saving records: ' + (data.message || 'Unknown database issue.'));
+                    }
+                })
+                .catch(err => {
+                    btnSave.disabled = false;
+                    btnSave.textContent = 'Approve & Save Records';
+                    alert('Error communicating with database: ' + err.message);
+                });
+            });
+        });
+    </script>
+</body>
+</html>

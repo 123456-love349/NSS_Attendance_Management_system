@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - NSS Attendance</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/nss_logo.png') }}">
+    <style>
+        /* Admin layout styling */
+        .admin-layout {
+            display: grid;
+            grid-template-columns: 240px 1fr;
+            gap: 2rem;
+            margin-top: 1rem;
+        }
+        @media (max-width: 900px) {
+            .admin-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+        .sidebar {
+            background: var(--surface);
+            border-radius: var(--radius-lg);
+            padding: 1.5rem;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+            height: fit-content;
+        }
+        .sidebar-menu {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        .sidebar-link {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem 1rem;
+            color: var(--text-muted);
+            text-decoration: none;
+            font-weight: 500;
+            border-radius: var(--radius-sm);
+            transition: var(--transition);
+        }
+        .sidebar-link:hover, .sidebar-link.active {
+            color: var(--primary);
+            background: rgba(0, 33, 71, 0.05);
+        }
+        .sidebar-link.active {
+            font-weight: 600;
+            border-left: 4px solid var(--accent);
+            color: var(--primary);
+            background: rgba(0, 33, 71, 0.08);
+        }
+        .sidebar-link.logout {
+            color: var(--error);
+        }
+        .sidebar-link.logout:hover {
+            background: rgba(239, 68, 68, 0.05);
+        }
+        /* Stats cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        .stat-card {
+            background: var(--surface);
+            border-radius: var(--radius-md);
+            padding: 1.5rem;
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow);
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            position: relative;
+            overflow: hidden;
+            transition: var(--transition);
+        }
+        .stat-card:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-lg);
+        }
+        .stat-icon {
+            background: rgba(0, 33, 71, 0.05);
+            color: var(--primary);
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+        .stat-icon.alert-icon {
+            background: rgba(239, 68, 68, 0.05);
+            color: var(--error);
+        }
+        .stat-val {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: var(--primary);
+            line-height: 1.2;
+        }
+        .stat-lbl {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+        /* Badge styling */
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        .badge-danger {
+            background-color: rgba(239, 68, 68, 0.1);
+            color: var(--error);
+        }
+        .badge-warning {
+            background-color: rgba(245, 158, 11, 0.1);
+            color: #d97706;
+        }
+        .badge-info {
+            background-color: rgba(59, 130, 246, 0.1);
+            color: #2563eb;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <a href="/" class="brand">
+            <img src="{{ url_for('static', filename='images/nss_logo.png') }}" alt="NSS Logo" class="brand-logo">
+            <div class="brand-text">
+                <h1>NSS Smart Attendance</h1>
+                <p>National Service Scheme</p>
+            </div>
+        </a>
+        <nav>
+            <span style="font-weight: 600; color: var(--primary); border-right: 1px solid var(--border); padding-right: 1rem; margin-right: 0.5rem;">
+                Logged in as Admin
+            </span>
+            <a href="/admin/logout" class="nav-link" style="color: var(--error);">Logout</a>
+        </nav>
+    </header>
+
+    <main style="max-width: 1300px;">
+        <!-- Flash Messages -->
+        <div class="flash-messages">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ 'success' if category == 'success' else 'error' }}">
+                            {% if category == 'success' %}
+                                <svg width="20" height="20" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>
+                            {% else %}
+                                <svg width="20" height="20" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path></svg>
+                            {% endif %}
+                            <span>{{ message }}</span>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+        </div>
+
+        <div class="admin-layout">
+            <!-- Sidebar -->
+            <aside class="sidebar">
+                <h3 style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 1rem; padding-left: 0.5rem;">Navigation</h3>
+                <ul class="sidebar-menu">
+                    <li>
+                        <a href="/admin" class="sidebar-link active">
+                            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 6a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>
+                            Dashboard
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/results" class="sidebar-link">
+                            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
+                            Attendance Logs
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/upload" class="sidebar-link">
+                            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+                            Upload Sheet (OCR)
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/analytics" class="sidebar-link">
+                            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2h-2a2 2 0 00-2 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+                            Analytics
+                        </a>
+                    </li>
+                    <li style="margin-top: 1rem; border-top: 1px solid var(--border); padding-top: 1rem;">
+                        <a href="/admin/logout" class="sidebar-link logout">
+                            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+                            Logout
+                        </a>
+                    </li>
+                </ul>
+            </aside>
+
+            <!-- Main Content Area -->
+            <div class="content-area">
+                <!-- Statistics -->
+                <section class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                        </div>
+                        <div>
+                            <div class="stat-val">{{ stats.total_records }}</div>
+                            <div class="stat-lbl">Total Attendance Logs</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0a8 8 0 11-16 0 8 8 0 0116 0z"></path></svg>
+                        </div>
+                        <div>
+                            <div class="stat-val">{{ stats.active_events }}</div>
+                            <div class="stat-lbl">Active QR Events</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon alert-icon">
+                            <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                        </div>
+                        <div>
+                            <div class="stat-val" style="color: var(--error);">{{ stats.suspicious_alerts }}</div>
+                            <div class="stat-lbl">Suspicious Records</div>
+                        </div>
+                    </div>
+                </section>
+
+                <div class="dashboard-grid">
+                    <!-- Left Side: QR Code Generator Form & Manual Entry -->
+                    <div>
+                        <div class="card" style="margin-bottom: 2rem;">
+                            <h3 class="card-title">Generate QR Code</h3>
+                            <p class="card-description" style="margin-bottom: 1.5rem;">Enter the name of the NSS event to generate a unique attendance marking QR Code.</p>
+                            
+                            <form action="/admin/generate_qr" method="POST">
+                                <div class="form-group">
+                                    <label class="form-label" for="event_name">NSS Event Name</label>
+                                    <input type="text" id="event_name" name="event_name" class="form-control" placeholder="e.g. Tree Plantation Drive" required>
+                                </div>
+                                <button type="submit" class="btn btn-primary btn-full">Generate QR Code</button>
+                            </form>
+                        </div>
+
+                        <!-- Manual Entry Card -->
+                        <div class="card">
+                            <h3 class="card-title">Add Attendance Manually</h3>
+                            <p class="card-description" style="margin-bottom: 1.5rem;">Directly register a student record in the database for an active event.</p>
+                            
+                            <form action="/admin/manual_entry" method="POST">
+                                <div class="form-group">
+                                    <label class="form-label" for="manual_event">Event Name</label>
+                                    <input type="text" id="manual_event" name="event" class="form-control" placeholder="e.g. Blood Donation Camp" required>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label" for="manual_name">Student Name</label>
+                                    <input type="text" id="manual_name" name="student_name" class="form-control" placeholder="Full Name" required>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label" for="manual_branch">Branch</label>
+                                    <input type="text" id="manual_branch" name="branch" class="form-control" placeholder="e.g. Computer Science" required>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label" for="manual_section">Section</label>
+                                    <input type="text" id="manual_section" name="section" class="form-control" placeholder="e.g. A" required>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label" for="manual_crn">CRN</label>
+                                    <input type="text" id="manual_crn" name="crn" class="form-control" placeholder="Class Roll Number" required>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label" for="manual_urn">URN</label>
+                                    <input type="text" id="manual_urn" name="urn" class="form-control" placeholder="University Roll Number" required>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label" for="manual_phone">Phone Number</label>
+                                    <input type="tel" id="manual_phone" name="phone" class="form-control" placeholder="10-digit mobile" required>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label" for="manual_volunteer">NSS Volunteer?</label>
+                                    <select id="manual_volunteer" name="is_nss_volunteer" class="form-control" required>
+                                        <option value="Yes">Yes</option>
+                                        <option value="No">No</option>
+                                    </select>
+                                </div>
+                                <button type="submit" class="btn btn-secondary btn-full">Save Record</button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Right Side: Generated QR & Active Events List -->
+                    <div>
+                        <!-- Generated QR Section -->
+                        {% if qr_generated %}
+                            <div class="card" style="margin-bottom: 2rem; text-align: center;">
+                                <h3 class="card-title">QR Code Generated!</h3>
+                                <p class="card-description">Save, print, or project this QR code so students can scan and mark their attendance.</p>
+                                
+                                <div class="qr-preview-container">
+                                    <img src="{{ url_for('static', filename='qr_codes/' + qr_filename) }}" alt="Event QR Code" class="qr-image">
+                                    <div class="qr-link-text">{{ qr_link }}</div>
+                                    <div class="qr-actions">
+                                        <a href="{{ url_for('static', filename='qr_codes/' + qr_filename) }}" download class="btn btn-primary">
+                                            Download Image
+                                        </a>
+                                        <a href="{{ qr_link }}" target="_blank" class="btn btn-secondary">
+                                            Open Form Link
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endif %}
+
+                        <!-- Existing QR Codes List -->
+                        <div class="card">
+                            <h3 class="card-title">Active Event QRs</h3>
+                            <p class="card-description">List of events for which QR codes have been generated.</p>
+                            
+                            {% if active_events %}
+                                <div style="max-height: 350px; overflow-y: auto;">
+                                    <table class="styled-table" style="font-size: 0.85rem;">
+                                        <thead>
+                                            <tr>
+                                                <th>Event Name</th>
+                                                <th style="width: 120px; text-align: center;">Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for event in active_events %}
+                                                <tr>
+                                                    <td style="font-weight: 500; color: var(--primary);">{{ event.name }}</td>
+                                                    <td style="text-align: center; display: flex; gap: 0.5rem; justify-content: center;">
+                                                        <a href="/student_form?event={{ event.name }}" class="btn btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">Link</a>
+                                                        <a href="{{ url_for('static', filename='qr_codes/' + event.filename) }}" download class="btn btn-primary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">QR</a>
+                                                    </td>
+                                                </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            {% else %}
+                                <div class="qr-preview-container" style="min-height: 120px;">
+                                    <p style="color: var(--text-muted); font-size: 0.9rem;">No event QR codes generated yet.</p>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SUSPICIOUS RECORDS SECTION -->
+                <section class="card" style="margin-top: 2rem;">
+                    <h3 class="card-title" style="color: var(--error); display: flex; align-items: center; gap: 0.5rem;">
+                        <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                        SUSPICIOUS RECORDS SECTION
+                    </h3>
+                    <p class="card-description">Real-time alerts for proxy entries, shared mobile numbers, rapid submissions, and registration anomalies.</p>
+                    
+                    {% if suspicious_records %}
+                        <div class="table-wrapper">
+                            <table class="styled-table" style="font-size: 0.9rem;">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 250px;">Anomaly Type</th>
+                                        <th>Alert Description</th>
+                                        <th style="width: 100px; text-align: center;">Severity</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for alert in suspicious_records %}
+                                        <tr>
+                                            <td style="font-weight: 600; color: var(--primary);">
+                                                {{ alert.type }}
+                                            </td>
+                                            <td style="color: var(--text);">
+                                                {{ alert.detail }}
+                                            </td>
+                                            <td style="text-align: center;">
+                                                {% if alert.severity == 'high' %}
+                                                    <span class="badge badge-danger">High</span>
+                                                {% else %}
+                                                    <span class="badge badge-warning">Medium</span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="qr-preview-container" style="min-height: 150px; background: #fafdfb; border-color: rgba(16, 185, 129, 0.2);">
+                            <svg width="40" height="40" fill="none" stroke="var(--success)" stroke-width="1.5" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                            <p style="color: var(--success); font-weight: 500; margin-top: 0.75rem;">System Secure: No proxy attempts or suspicious activities flagged.</p>
+                        </div>
+                    {% endif %}
+                </section>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <p>&copy; 2026 National Service Scheme (NSS). All Rights Reserved.</p>
+        <p style="font-size: 0.75rem; margin-top: 0.5rem; color: var(--text-muted);">Not Me But You</p>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Login - NSS Attendance</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/nss_logo.png') }}">
+    <style>
+        .login-container {
+            max-width: 450px;
+            margin: 5rem auto;
+            padding: 0 1.5rem;
+            animation: fadeIn 0.8s ease-out;
+        }
+        .login-card {
+            background: var(--surface);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-lg);
+            border: 1px solid var(--border);
+            padding: 2.5rem;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        .login-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 5px;
+            background: linear-gradient(90deg, var(--primary), var(--accent));
+        }
+        .login-header {
+            margin-bottom: 2rem;
+        }
+        .login-logo {
+            height: 70px;
+            width: auto;
+            margin-bottom: 1rem;
+            transition: var(--transition);
+        }
+        .login-logo:hover {
+            transform: scale(1.08) rotate(5deg);
+        }
+        .hint-box {
+            background-color: #f0f6fc;
+            border: 1px dashed #388bfd66;
+            padding: 0.75rem;
+            border-radius: var(--radius-sm);
+            font-size: 0.85rem;
+            color: var(--primary);
+            margin-bottom: 1.5rem;
+            text-align: left;
+        }
+        .hint-box code {
+            font-weight: 700;
+            color: var(--accent);
+            background: #e1e8f0;
+            padding: 0.15rem 0.3rem;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <a href="/" class="brand">
+            <img src="{{ url_for('static', filename='images/nss_logo.png') }}" alt="NSS Logo" class="brand-logo">
+            <div class="brand-text">
+                <h1>NSS Smart Attendance</h1>
+                <p>National Service Scheme</p>
+            </div>
+        </a>
+        <nav>
+            <a href="/" class="nav-link">Home</a>
+            <a href="/student_form" class="nav-link">Student Portal</a>
+        </nav>
+    </header>
+
+    <main>
+        <div class="login-container">
+            <!-- Flash Messages -->
+            <div class="flash-messages">
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ 'success' if category == 'success' else 'error' }}">
+                                <svg width="20" height="20" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path></svg>
+                                <span>{{ message }}</span>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+            </div>
+
+            <div class="login-card">
+                <div class="login-header">
+                    <img src="{{ url_for('static', filename='images/nss_logo.png') }}" alt="NSS Logo" class="login-logo">
+                    <h2 style="color: var(--primary); font-weight: 800; font-size: 1.75rem;">Admin Login</h2>
+                    <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 0.25rem;">Enter credentials to access dashboard</p>
+                </div>
+
+                <div class="hint-box">
+                    <strong>Demo Credentials:</strong><br>
+                    Username: <code>admin</code><br>
+                    Password: <code>admin123</code>
+                </div>
+
+                <form action="/admin/login" method="POST">
+                    <div class="form-group">
+                        <label class="form-label" for="username">Username</label>
+                        <input type="text" id="username" name="username" class="form-control" placeholder="Enter username" required autofocus>
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 2rem;">
+                        <label class="form-label" for="password">Password</label>
+                        <input type="password" id="password" name="password" class="form-control" placeholder="Enter password" required>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-full" style="padding: 0.85rem;">Login to Dashboard</button>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <p>&copy; 2026 National Service Scheme (NSS). All Rights Reserved.</p>
+        <p style="font-size: 0.75rem; margin-top: 0.5rem; color: var(--text-muted);">Not Me But You</p>
+    </footer>
+</body>
+</html>

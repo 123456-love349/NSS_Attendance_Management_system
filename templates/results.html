@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attendance Records - NSS</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/nss_logo.png') }}">
+    <style>
+        .admin-layout {
+            display: grid;
+            grid-template-columns: 240px 1fr;
+            gap: 2rem;
+            margin-top: 1rem;
+        }
+        @media (max-width: 900px) {
+            .admin-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+        .sidebar {
+            background: var(--surface);
+            border-radius: var(--radius-lg);
+            padding: 1.5rem;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+            height: fit-content;
+        }
+        .sidebar-menu {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        .sidebar-link {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem 1rem;
+            color: var(--text-muted);
+            text-decoration: none;
+            font-weight: 500;
+            border-radius: var(--radius-sm);
+            transition: var(--transition);
+        }
+        .sidebar-link:hover, .sidebar-link.active {
+            color: var(--primary);
+            background: rgba(0, 33, 71, 0.05);
+        }
+        .sidebar-link.active {
+            font-weight: 600;
+            border-left: 4px solid var(--accent);
+            color: var(--primary);
+            background: rgba(0, 33, 71, 0.08);
+        }
+        .sidebar-link.logout {
+            color: var(--error);
+        }
+        .sidebar-link.logout:hover {
+            background: rgba(239, 68, 68, 0.05);
+        }
+        .filter-panel {
+            background: var(--surface);
+            padding: 1.5rem;
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+            margin-bottom: 2rem;
+            display: grid;
+            grid-template-columns: 2fr repeat(4, 1.2fr) auto;
+            gap: 1rem;
+            align-items: flex-end;
+        }
+        @media (max-width: 1050px) {
+            .filter-panel {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+        @media (max-width: 600px) {
+            .filter-panel {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <a href="/" class="brand">
+            <img src="{{ url_for('static', filename='images/nss_logo.png') }}" alt="NSS Logo" class="brand-logo">
+            <div class="brand-text">
+                <h1>NSS Smart Attendance</h1>
+                <p>National Service Scheme</p>
+            </div>
+        </a>
+        <nav>
+            <span style="font-weight: 600; color: var(--primary); border-right: 1px solid var(--border); padding-right: 1rem; margin-right: 0.5rem;">
+                Logged in as Admin
+            </span>
+            <a href="/admin/logout" class="nav-link" style="color: var(--error);">Logout</a>
+        </nav>
+    </header>
+
+    <main style="max-width: 1300px;">
+        <div class="admin-layout">
+            <!-- Sidebar -->
+            <aside class="sidebar">
+                <h3 style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 1rem; padding-left: 0.5rem;">Navigation</h3>
+                <ul class="sidebar-menu">
+                    <li>
+                        <a href="/admin" class="sidebar-link">
+                            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 6a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>
+                            Dashboard
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/results" class="sidebar-link active">
+                            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
+                            Attendance Logs
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/upload" class="sidebar-link">
+                            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+                            Upload Sheet (OCR)
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/analytics" class="sidebar-link">
+                            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2h-2a2 2 0 00-2 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+                            Analytics
+                        </a>
+                    </li>
+                    <li style="margin-top: 1rem; border-top: 1px solid var(--border); padding-top: 1rem;">
+                        <a href="/admin/logout" class="sidebar-link logout">
+                            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+                            Logout
+                        </a>
+                    </li>
+                </ul>
+            </aside>
+
+            <!-- Results main body -->
+            <div class="content-area">
+                <div class="hero" style="text-align: left; margin-bottom: 2rem;">
+                    <h2 style="font-size: 2.25rem;">NSS Attendance Logs</h2>
+                    <p style="margin:0;">Search, filter, and inspect records. Export verified files directly to Excel reports.</p>
+                </div>
+
+                <!-- Advanced Filters -->
+                <div class="filter-panel">
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label class="form-label" for="search-input">Search Logs</label>
+                        <input type="text" id="search-input" class="form-control" placeholder="Search name, URN, CRN, phone...">
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label class="form-label" for="filter-branch">Branch</label>
+                        <select id="filter-branch" class="form-control">
+                            <option value="">All Branches</option>
+                            {% for branch in branches %}
+                                <option value="{{ branch }}">{{ branch }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label class="form-label" for="filter-event">Event</label>
+                        <select id="filter-event" class="form-control">
+                            <option value="">All Events</option>
+                            {% for event in events %}
+                                <option value="{{ event }}">{{ event }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label class="form-label" for="filter-mode">Mode</label>
+                        <select id="filter-mode" class="form-control">
+                            <option value="">All Modes</option>
+                            {% for mode in modes %}
+                                <option value="{{ mode }}">{{ mode }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label class="form-label" for="filter-volunteer">Volunteer</label>
+                        <select id="filter-volunteer" class="form-control">
+                            <option value="">All Status</option>
+                            <option value="Yes">Volunteers Only</option>
+                            <option value="No">Non-Volunteers</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <a href="/download" class="btn btn-accent" style="height: 46px; display: inline-flex; align-items: center; justify-content: center; width: 100%;">
+                            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                            Export Excel
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Results table -->
+                <div class="table-wrapper">
+                    <table class="styled-table">
+                        <thead>
+                            <tr>
+                                <th>Student Name</th>
+                                <th>Branch</th>
+                                <th style="text-align: center;">Sec</th>
+                                <th style="text-align: center;">CRN</th>
+                                <th style="text-align: center;">URN</th>
+                                <th style="text-align: center;">Phone</th>
+                                <th style="text-align: center;">Volunteer</th>
+                                <th>NSS Event Name</th>
+                                <th style="text-align: center;">Mode</th>
+                                <th style="text-align: center;">Logged At</th>
+                            </tr>
+                        </thead>
+                        <tbody id="attendance-table-body">
+                            {% for record in records %}
+                                <tr class="attendance-row">
+                                    <td data-label="Student Name" style="font-weight: 600; color: var(--primary);">{{ record.student_name }}</td>
+                                    <td data-label="Branch">{{ record.branch }}</td>
+                                    <td data-label="Section" style="text-align: center;">{{ record.section }}</td>
+                                    <td data-label="CRN" style="text-align: center; font-family: monospace;">{{ record.crn }}</td>
+                                    <td data-label="URN" style="text-align: center; font-family: monospace; font-size: 0.95rem;">{{ record.urn }}</td>
+                                    <td data-label="Phone" style="text-align: center;">{{ record.phone }}</td>
+                                    <td data-label="Volunteer" style="text-align: center;">
+                                        {% if record.is_nss_volunteer == 'Yes' %}
+                                            <span style="background: rgba(16, 185, 129, 0.1); color: var(--success); padding: 0.15rem 0.4rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600;">Yes</span>
+                                        {% else %}
+                                            <span style="background: rgba(239, 68, 68, 0.1); color: var(--error); padding: 0.15rem 0.4rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600;">No</span>
+                                        {% endif %}
+                                    </td>
+                                    <td data-label="Event" style="font-weight: 500;">{{ record.event }}</td>
+                                    <td data-label="Mode" style="text-align: center;">
+                                        <span style="background: rgba(0, 33, 71, 0.05); color: var(--primary); padding: 0.2rem 0.4rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600;">{{ record.attendance_mode }}</span>
+                                    </td>
+                                    <td data-label="Logged At" style="text-align: center; font-size: 0.8rem; color: var(--text-muted);">
+                                        {{ record.created_at }}
+                                    </td>
+                                </tr>
+                            {% else %}
+                                <tr>
+                                    <td colspan="10" class="no-records">
+                                        <p style="font-size: 1.1rem; font-weight: 500; margin-bottom: 0.5rem;">No attendance records found.</p>
+                                        <p style="color: var(--text-muted); font-size: 0.9rem;">Generate a QR code or submit a student form to log attendance!</p>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+
+                    <div id="no-records-message" class="no-records" style="display: none; border-top: 1px solid var(--border);">
+                        <p style="font-size: 1.1rem; font-weight: 500; margin-bottom: 0.5rem;">No matching records found.</p>
+                        <p style="color: var(--text-muted); font-size: 0.9rem;">Try adjusting your filters or search query.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <p>&copy; 2026 National Service Scheme (NSS). All Rights Reserved.</p>
+        <p style="font-size: 0.75rem; margin-top: 0.5rem; color: var(--text-muted);">Not Me But You</p>
+    </footer>
+
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>

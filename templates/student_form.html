@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Attendance Form - NSS</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/nss_logo.png') }}">
+</head>
+<body>
+    <header>
+        <a href="/" class="brand">
+            <img src="{{ url_for('static', filename='images/nss_logo.png') }}" alt="NSS Logo" class="brand-logo">
+            <div class="brand-text">
+                <h1>NSS Smart Attendance</h1>
+                <p>National Service Scheme</p>
+            </div>
+        </a>
+        <nav>
+            <a href="/" class="nav-link">Home</a>
+            <a href="/student_form" class="nav-link active">Student Portal</a>
+        </nav>
+    </header>
+
+    <main>
+        <div style="max-width: 600px; margin: 0 auto;">
+            <div class="hero" style="margin-bottom: 2rem;">
+                <h2>Student Attendance Form</h2>
+                <p>Please enter your exact academic details to log your attendance for the NSS event.</p>
+            </div>
+
+            <div class="flash-messages">
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ 'success' if category == 'success' else 'error' }}">
+                                <span>{{ message }}</span>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+            </div>
+
+            <div class="card" style="padding: 2rem;">
+                <form id="student-attendance-form" action="/student_form" method="POST" novalidate>
+                    <div class="form-group">
+                        <label class="form-label" for="event">NSS Event Name</label>
+                        {% if event_name %}
+                            <input type="text" id="event" name="event" class="form-control" value="{{ event_name }}" readonly required style="font-weight:600; color: var(--primary);">
+                        {% else %}
+                            {% if events_list %}
+                                <select id="event" name="event" class="form-control" required>
+                                    <option value="" disabled selected>-- Select an Event --</option>
+                                    {% for event in events_list %}
+                                        <option value="{{ event }}">{{ event }}</option>
+                                    {% endfor %}
+                                </select>
+                            {% else %}
+                                <input type="text" id="event" name="event" class="form-control" placeholder="Enter Event Name" required>
+                            {% endif %}
+                        {% endif %}
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="student_name">Full Name</label>
+                        <input type="text" id="student_name" name="student_name" class="form-control" placeholder="Enter your full name" required>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1rem;">
+                        <div class="form-group">
+                            <label class="form-label" for="branch">Branch / Department</label>
+                            <select id="branch" name="branch" class="form-control" required>
+                                <option value="" disabled selected>-- Select Branch --</option>
+                                <option value="Computer Science">Computer Science & Eng</option>
+                                <option value="Information Technology">Information Technology</option>
+                                <option value="Electronics & Communication">Electronics & Comm</option>
+                                <option value="Mechanical Engineering">Mechanical Engineering</option>
+                                <option value="Electrical Engineering">Electrical Engineering</option>
+                                <option value="Civil Engineering">Civil Engineering</option>
+                                <option value="Robotics & AI">Robotics & AI</option>
+                                 <option value="BCA">BCA</option>
+                                <option value="BBA">BBA</option>
+                                <option value="MBA">MBA</option>
+<option value="MCA">MCA</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="section">Section</label>
+                            <select id="section" name="section" class="form-control" required>
+                                <option value="" disabled selected>Select</option>
+                                <option value="A">A</option>
+                                <option value="B">B</option>
+                                <option value="C">C</option>
+                                <option value="D">D</option>
+                                <option value="E">E</option>
+                                <option value="F">F</option>
+                                <option value="MX">MX</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div class="form-group">
+                            <label class="form-label" for="crn">Class Roll No (CRN)</label>
+                            <input type="text" id="crn" name="crn" class="form-control" placeholder="e.g. 2104101" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="urn">University Roll No (URN)</label>
+                            <input type="text" id="urn" name="urn" class="form-control" placeholder="e.g. 2115190" required>
+                        </div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div class="form-group">
+                            <label class="form-label" for="phone">Phone Number</label>
+                            <input type="tel" id="phone" name="phone" class="form-control" placeholder="10-digit mobile number" required>
+                            <button type="button" onclick="sendOTP()" style="margin-top:8px;" class="btn btn-secondary">
+                                Send OTP
+                            </button>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="otp">Enter OTP</label>
+                            <input type="text" id="otp" class="form-control" placeholder="Enter OTP here">
+                            <button type="button" onclick="verifyOTP()" style="margin-top:8px;" class="btn btn-secondary">
+                                Verify OTP
+                            </button>
+                            <small id="otp_status" style="display:block;margin-top:5px;"></small>
+                            <div id="otpBox"
+     style="display:none;
+            margin-top:10px;
+            padding:15px;
+            background:#d4edda;
+            color:#155724;
+            border:2px solid #28a745;
+            border-radius:8px;
+            text-align:center;
+            font-weight:bold;">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="is_nss_volunteer">NSS Volunteer?</label>
+                        <select id="is_nss_volunteer" name="is_nss_volunteer" class="form-control" required>
+                            <option value="" disabled selected>Select</option>
+                            <option value="Yes">Yes</option>
+                            <option value="No">No</option>
+                        </select>
+                    </div>
+
+                    <button type="submit" class="btn btn-accent btn-full" style="margin-top: 1.5rem; padding: 0.85rem;">Submit Attendance</button>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <p>&copy; 2026 National Service Scheme (NSS). All Rights Reserved.</p>
+        <p style="font-size: 0.75rem; margin-top: 0.5rem; color: var(--text-muted);">Not Me But You</p>
+    </footer>
+
+    <script>
+        function sendOTP() {
+
+    let phone = document.getElementById("phone").value.trim();
+
+    if (phone == "") {
+        alert("Enter phone number first");
+        return;
+    }
+
+    fetch("/send_otp", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/x-www-form-urlencoded"
+        },
+        body: "phone=" + encodeURIComponent(phone)
+    })
+
+    .then(response => response.json())
+
+    .then(data => {
+
+        if (data.status == "success") {
+
+            document.getElementById("otpBox").style.display = "block";
+
+            document.getElementById("otpBox").innerHTML = `
+                <h3 style="margin:0;color:green;">✅ OTP Generated Successfully</h3>
+
+                <div style="
+                    font-size:34px;
+                    font-weight:bold;
+                    color:#0d6efd;
+                    margin-top:10px;">
+                    ${data.otp}
+                </div>
+
+                <p style="margin-top:10px;">
+                    Enter this OTP below and click Verify OTP.
+                </p>
+            `;
+
+        }
+
+        else{
+
+            alert(data.message);
+
+        }
+
+    })
+
+    .catch(error=>{
+
+        console.log(error);
+
+        alert("Unable to Generate OTP");
+
+    });
+
+}
+
+        function verifyOTP() {
+            let otp = document.getElementById("otp").value.trim();
+
+            fetch("/verify_otp", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded"
+                },
+                body: "otp=" + encodeURIComponent(otp)
+            })
+            .then(async res => {
+                const data = await res.json();
+                document.getElementById("otp_status").innerText = data.message;
+
+                if (res.ok) {
+                    document.getElementById("otp_status").style.color = "green";
+                } else {
+                    document.getElementById("otp_status").style.color = "red";
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                document.getElementById("otp_status").innerText = "OTP verification failed";
+                document.getElementById("otp_status").style.color = "red";
+            });
+        }
+    </script>
+</body>
+</html>
