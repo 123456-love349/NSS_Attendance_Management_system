@@ -1,7 +1,4 @@
 Flask==3.0.2
-qrcode==7.4.2
-pillow==10.2.0
-openpyxl==3.1.2
-opencv-python
 gunicorn
-
+qrcode
+pillow
