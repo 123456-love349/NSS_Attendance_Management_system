@@ -300,8 +300,38 @@
                             </form>
                         </div>
                     </div>
+                    <h3>OCR Attendance Verification</h3>
 
-                    <!-- Right Side: Generated QR & Active Events List -->
+<form action="/admin/ocr_upload"
+      method="POST"
+      enctype="multipart/form-data">
+
+    <label>Manual Attendance Sheet</label>
+
+    <input
+        type="file"
+        name="manual_sheet"
+        accept=".jpg,.jpeg,.png,.pdf"
+        required>
+
+    <br><br>
+
+    <label>Attendance Excel</label>
+
+    <input
+        type="file"
+        name="attendance_excel"
+        accept=".xlsx"
+        required>
+
+    <br><br>
+
+    <button type="submit">
+        Compare Attendance
+    </button>
+
+</form>
+         <!-- Right Side: Generated QR & Active Events List -->
                     <div>
                         <!-- Generated QR Section -->
                         {% if qr_generated %}
@@ -359,7 +389,7 @@
                         </div>
                     </div>
                 </div>
-
+                
                 <!-- SUSPICIOUS RECORDS SECTION -->
                 <section class="card" style="margin-top: 2rem;">
                     <h3 class="card-title" style="color: var(--error); display: flex; align-items: center; gap: 0.5rem;">

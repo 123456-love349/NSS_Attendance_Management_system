@@ -212,6 +212,9 @@
                                 <th style="text-align: center;">URN</th>
                                 <th style="text-align: center;">Phone</th>
                                 <th style="text-align: center;">Volunteer</th>
+                                <th>Latitude</th>
+                                <th>Longitude</th>
+                                <th>Status</th>
                                 <th>NSS Event Name</th>
                                 <th style="text-align: center;">Mode</th>
                                 <th style="text-align: center;">Logged At</th>
@@ -227,6 +230,9 @@
                                     <td data-label="URN" style="text-align: center; font-family: monospace; font-size: 0.95rem;">{{ record.urn }}</td>
                                     <td data-label="Phone" style="text-align: center;">{{ record.phone }}</td>
                                     <td data-label="Volunteer" style="text-align: center;">
+                                    <td>{{ record.latitude }}</td>
+                                     <td>{{ record.longitude }}</td>
+                                    <td>{{ record.location_status }}</td>    
                                         {% if record.is_nss_volunteer == 'Yes' %}
                                             <span style="background: rgba(16, 185, 129, 0.1); color: var(--success); padding: 0.15rem 0.4rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600;">Yes</span>
                                         {% else %}

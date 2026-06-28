@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OCR Attendance Result</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+ 
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: #f0f2f5;
+            padding: 30px 20px;
+            color: #333;
+        }
+ 
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+ 
+        h1 {
+            font-size: 26px;
+            color: #1a1a2e;
+            margin-bottom: 6px;
+        }
+ 
+        .subtitle {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 28px;
+        }
+ 
+        /* ── Stats cards ── */
+        .stats {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+            margin-bottom: 32px;
+        }
+ 
+        .card {
+            flex: 1;
+            min-width: 160px;
+            background: #fff;
+            border-radius: 10px;
+            padding: 20px 24px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+            text-align: center;
+        }
+ 
+        .card .number {
+            font-size: 36px;
+            font-weight: 700;
+            line-height: 1;
+        }
+ 
+        .card .label {
+            font-size: 13px;
+            color: #888;
+            margin-top: 6px;
+        }
+ 
+        .card.total  .number { color: #4472C4; }
+        .card.present .number { color: #2e7d32; }
+        .card.absent  .number { color: #c62828; }
+        .card.detected .number { color: #f57c00; }
+ 
+        /* ── Section headings ── */
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 28px 0 12px;
+        }
+ 
+        .badge {
+            display: inline-block;
+            padding: 4px 14px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #fff;
+        }
+ 
+        .badge.present { background: #2e7d32; }
+        .badge.absent  { background: #c62828; }
+ 
+        .section-header h2 {
+            font-size: 18px;
+            font-weight: 600;
+        }
+ 
+        /* ── Tables ── */
+        .table-wrap {
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+            overflow: auto;
+            margin-bottom: 30px;
+        }
+ 
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+ 
+        thead th {
+            background: #1a1a2e;
+            color: #fff;
+            padding: 12px 16px;
+            text-align: left;
+            white-space: nowrap;
+        }
+ 
+        tbody tr:nth-child(even) { background: #f9f9f9; }
+ 
+        tbody tr:hover { background: #eef2ff; }
+ 
+        td {
+            padding: 11px 16px;
+            border-bottom: 1px solid #eee;
+            white-space: nowrap;
+        }
+ 
+        .status-pill {
+            display: inline-block;
+            padding: 3px 14px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+ 
+        .status-pill.present { background: #e8f5e9; color: #2e7d32; }
+        .status-pill.absent  { background: #ffebee; color: #c62828; }
+ 
+        .empty-msg {
+            padding: 30px;
+            text-align: center;
+            color: #999;
+            font-size: 14px;
+        }
+ 
+        /* ── Action buttons ── */
+        .actions {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-top: 10px;
+        }
+ 
+        .btn {
+            padding: 11px 24px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            text-decoration: none;
+            display: inline-block;
+        }
+ 
+        .btn-primary { background: #4472C4; color: #fff; }
+        .btn-primary:hover { background: #3461b3; }
+ 
+        .btn-success { background: #2e7d32; color: #fff; }
+        .btn-success:hover { background: #1b5e20; }
+ 
+        .btn-outline {
+            background: #fff;
+            color: #333;
+            border: 1.5px solid #ccc;
+        }
+ 
+        .btn-outline:hover { background: #f5f5f5; }
+ 
+        /* ── Detected IDs debug section ── */
+        .debug {
+            background: #fff;
+            border-radius: 10px;
+            padding: 18px 22px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+            margin-bottom: 28px;
+        }
+ 
+        .debug h3 { font-size: 14px; color: #555; margin-bottom: 10px; }
+ 
+        .id-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+ 
+        .chip {
+            background: #eef2ff;
+            color: #3549b8;
+            padding: 4px 12px;
+            border-radius: 14px;
+            font-size: 12px;
+            font-family: monospace;
+        }
+ 
+        .chip.urn { background: #fff8e1; color: #b36200; }
+    </style>
+</head>
+<body>
+<div class="container">
+ 
+    <h1>📋 OCR Attendance Result</h1>
+    <p class="subtitle">Manual sheet compared with online master Excel — matched by CRN / URN only</p>
+ 
+    <!-- ── Stats cards ── -->
+    {% set total    = result.comparison_data | length %}
+    {% set present  = result.comparison_data | selectattr("Status", "equalto", "Present") | list | length %}
+    {% set absent   = total - present %}
+ 
+    <div class="stats">
+        <div class="card total">
+            <div class="number">{{ total }}</div>
+            <div class="label">Total Students</div>
+        </div>
+        <div class="card present">
+            <div class="number">{{ present }}</div>
+            <div class="label">Present</div>
+        </div>
+        <div class="card absent">
+            <div class="number">{{ absent }}</div>
+            <div class="label">Absent</div>
+        </div>
+        <div class="card detected">
+            <div class="number">{{ result.detected_crn_count }}</div>
+            <div class="label">CRNs Detected</div>
+        </div>
+        <div class="card detected">
+            <div class="number">{{ result.detected_urn_count }}</div>
+            <div class="label">URNs Detected</div>
+        </div>
+    </div>
+ 
+    <!-- ── Detected IDs (debug) ── -->
+    {% if result.detected_crns or result.detected_urns %}
+    <div class="debug">
+        <h3>🔍 IDs detected from manual sheet image</h3>
+        <div class="id-chips">
+            {% for crn in result.detected_crns %}
+                <span class="chip">CRN: {{ crn }}</span>
+            {% endfor %}
+            {% for urn in result.detected_urns %}
+                <span class="chip urn">URN: {{ urn }}</span>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+ 
+    <!-- ── Action buttons ── -->
+    <div class="actions" style="margin-bottom:28px;">
+        <form method="POST" action="/admin/ocr_process" enctype="multipart/form-data" id="downloadForm">
+            <!-- hidden re-upload not needed; use session or re-upload trigger -->
+        </form>
+        <a href="/admin" class="btn btn-outline">← Back to Dashboard</a>
+ 
+        <!-- Download button — re-submits the same image for Excel export -->
+        <button onclick="alert('Use the Download Excel button on the dashboard OCR upload form to get the Excel file.')"
+                class="btn btn-success">⬇ Download Excel Report</button>
+    </div>
+ 
+    <!-- ── PRESENT table ── -->
+    <div class="section-header">
+        <span class="badge present">✓ PRESENT</span>
+        <h2>{{ present }} student(s) marked present</h2>
+    </div>
+ 
+    <div class="table-wrap">
+        {% set present_rows = result.comparison_data | selectattr("Status", "equalto", "Present") | list %}
+        {% if present_rows %}
+        <table>
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>CRN</th>
+                    <th>URN</th>
+                    {% if present_rows[0] %}
+                        {% for key in present_rows[0].keys() %}
+                            {% if key not in ("CRN", "URN", "Status") %}
+                                <th>{{ key }}</th>
+                            {% endif %}
+                        {% endfor %}
+                    {% endif %}
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in present_rows %}
+                <tr>
+                    <td>{{ loop.index }}</td>
+                    <td>{{ row.CRN }}</td>
+                    <td>{{ row.URN }}</td>
+                    {% for key, val in row.items() %}
+                        {% if key not in ("CRN", "URN", "Status") %}
+                            <td>{{ val }}</td>
+                        {% endif %}
+                    {% endfor %}
+                    <td><span class="status-pill present">Present</span></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+            <div class="empty-msg">No students marked present.</div>
+        {% endif %}
+    </div>
+ 
+    <!-- ── ABSENT table ── -->
+    <div class="section-header">
+        <span class="badge absent">✗ ABSENT</span>
+        <h2>{{ absent }} student(s) marked absent</h2>
+    </div>
+ 
+    <div class="table-wrap">
+        {% set absent_rows = result.comparison_data | selectattr("Status", "equalto", "Absent") | list %}
+        {% if absent_rows %}
+        <table>
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>CRN</th>
+                    <th>URN</th>
+                    {% if absent_rows[0] %}
+                        {% for key in absent_rows[0].keys() %}
+                            {% if key not in ("CRN", "URN", "Status") %}
+                                <th>{{ key }}</th>
+                            {% endif %}
+                        {% endfor %}
+                    {% endif %}
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in absent_rows %}
+                <tr>
+                    <td>{{ loop.index }}</td>
+                    <td>{{ row.CRN }}</td>
+                    <td>{{ row.URN }}</td>
+                    {% for key, val in row.items() %}
+                        {% if key not in ("CRN", "URN", "Status") %}
+                            <td>{{ val }}</td>
+                        {% endif %}
+                    {% endfor %}
+                    <td><span class="status-pill absent">Absent</span></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+            <div class="empty-msg">No students marked absent.</div>
+        {% endif %}
+    </div>
+ 
+</div>
+</body>
+</html>
+ 

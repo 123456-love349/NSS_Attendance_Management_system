@@ -149,7 +149,9 @@
                             <option value="No">No</option>
                         </select>
                     </div>
-
+<input type="hidden" id="latitude" name="latitude">
+<input type="hidden" id="longitude" name="longitude">
+<input type="hidden" id="location_status" name="location_status">
                     <button type="submit" class="btn btn-accent btn-full" style="margin-top: 1.5rem; padding: 0.85rem;">Submit Attendance</button>
                 </form>
             </div>
@@ -162,6 +164,21 @@
     </footer>
 
     <script>
+        
+        document.getElementById("student-attendance-form")
+.addEventListener("submit", function(e){
+
+    let lat = document.getElementById("latitude").value;
+
+    if(lat==""){
+
+        e.preventDefault();
+
+        alert("Please enable your location before submitting attendance.");
+
+    }
+
+});
         function sendOTP() {
 
     let phone = document.getElementById("phone").value.trim();
@@ -249,6 +266,98 @@
                 document.getElementById("otp_status").style.color = "red";
             });
         }
-    </script>
+        window.onload = function () {
+
+    if (!navigator.geolocation) {
+        alert("Your browser does not support location.");
+        return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+
+        function(position){
+
+            document.getElementById("latitude").value =
+                position.coords.latitude;
+
+            document.getElementById("longitude").value =
+                position.coords.longitude;
+
+            document.getElementById("location_status").value =
+                "Granted";
+
+        },
+
+        function(error){
+
+            document.getElementById("location_status").value =
+                "Denied";
+
+            alert("Location permission is required to mark attendance.");
+
+        },
+
+        {
+            enableHighAccuracy:true,
+            timeout:10000,
+            maximumAge:0
+        }
+
+    );
+    window.onload = function () {
+
+    if (!navigator.geolocation) {
+        alert("Geolocation is not supported.");
+        return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+
+        function(position){
+
+            document.getElementById("latitude").value =
+                position.coords.latitude;
+
+            document.getElementById("longitude").value =
+                position.coords.longitude;
+
+            document.getElementById("location_status").value =
+                "captured";
+
+        },
+
+        function(){
+
+            document.getElementById("location_status").value =
+                "denied";
+
+            alert("Please allow location permission.");
+
+        },
+
+        {
+            enableHighAccuracy:true,
+            timeout:10000,
+            maximumAge:0
+        }
+
+    );
+
+};
+
+document.getElementById("student-attendance-form")
+.addEventListener("submit", function(e){
+
+    if(document.getElementById("latitude").value==""){
+
+        e.preventDefault();
+
+        alert("Please enable your location before submitting.");
+
+    }
+
+});
+
+};    </script>
 </body>
 </html>
